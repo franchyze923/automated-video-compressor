@@ -1,0 +1,18 @@
+services:
+  video_compressor:
+    container_name: "video_compressor"
+    #build: .
+    image: franchyze923/homelab:video_compressor
+    environment:
+      # If you want to override any environment variables from Dockerfile
+      # Example: let the mover poll every 120 seconds
+      MOVE_INTERVAL: "10"
+      HANDBRAKE_PRESET: "Fast 1080p30"
+      ALLOWED_EXTENSIONS: ".MOV"
+    volumes:
+      # Suppose you mount your NAS share to ./nas_test on the host
+      - /mnt/FranHomeMedia/Frans_Videos/2025/Workouts/Raw Footage/01:/nas
+      - /home/fran/test_projects/videos:/videos
+      - /mnt/FranHomeMedia/Frans_Videos/2025/Workouts/Raw Footage/01:/compressed
+
+    restart: unless-stopped
