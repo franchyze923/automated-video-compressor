@@ -1,6 +1,8 @@
 import os
 import time
 import logging
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
 import subprocess
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -25,13 +27,20 @@ MAX_WAIT_TIME  = int(os.environ.get("MAX_WAIT_TIME", "60"))   # seconds
 logger = logging.getLogger("Compressor")
 logger.setLevel(logging.INFO)
 
+# Console handler
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - [Compressor] %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
-# If you also want to log to a file, add a FileHandler here.
+# File handler with rotation
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+log_file = f"/logs/watch_videos_{timestamp}.log"  # Change this to your desired log file path
+file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 def wait_until_fully_written(file_path):
     logger.info(f"Waiting for file to finish writing: {file_path}")
@@ -57,6 +66,13 @@ class VideoCreatedHandler(FileSystemEventHandler):
             return
 
         new_file_path = event.src_path
+        file_name = os.path.basename(new_file_path)
+
+        # Ignore hidden files (those starting with a dot)
+        if file_name.startswith('.'):
+            logger.info(f"Ignored hidden file: {new_file_path}")
+            return
+
         _, ext = os.path.splitext(new_file_path)
 
         if ext.lower() in ALLOWED_EXTENSIONS:
@@ -67,7 +83,7 @@ class VideoCreatedHandler(FileSystemEventHandler):
                 logger.error(f"Skipping compression: file never stabilized: {new_file_path}")
                 return
 
-            base_name = os.path.splitext(os.path.basename(new_file_path))[0]
+            base_name = os.path.splitext(file_name)[0]
             out_file = os.path.join(DEST_FOLDER, base_name + "_compressed.mp4")
 
             logger.info(f"Compressing: {new_file_path} -> {out_file}")

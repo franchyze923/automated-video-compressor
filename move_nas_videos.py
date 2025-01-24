@@ -4,6 +4,8 @@ import time
 import shutil
 import logging
 import errno
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
 
 # ---------------------------------------------------------------------------
 # 1. Logging Setup
@@ -11,11 +13,20 @@ import errno
 logger = logging.getLogger("Mover")
 logger.setLevel(logging.INFO)
 
+# Console handler
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - [Mover] %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
+
+# File handler with rotation
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+log_file = f"/logs/move_nas_videos_{timestamp}.log"  # Change this to your desired log file path
+file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 # ---------------------------------------------------------------------------
 # 2. Configuration (via environment variables, or defaults)
