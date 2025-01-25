@@ -60,10 +60,11 @@ def cross_device_move(source, dest):
 def move_new_videos():
     """
     Moves all .MOV files from NAS_DIR to LOCAL_DIR (if they don't already exist).
-    Uses cross_device_move() to handle potential EXDEV errors.
+    Skips hidden files and uses cross_device_move() to handle potential EXDEV errors.
     """
     for entry in os.scandir(NAS_DIR):
-        if entry.is_file() and entry.name.lower().endswith('.mov'):
+        # Skip directories and hidden files
+        if entry.is_file() and not entry.name.startswith('.') and entry.name.lower().endswith('.mov'):
             source = os.path.join(NAS_DIR, entry.name)
             dest = os.path.join(LOCAL_DIR, entry.name)
 
@@ -74,6 +75,9 @@ def move_new_videos():
                     cross_device_move(source, dest)
                 except Exception as err:
                     logger.error(f"Error moving {source}: {err}")
+        else:
+            if entry.name.startswith('.'):
+                logger.info(f"Skipped hidden file: {entry.name}")
 
 def main():
     logger.info(f"Starting poll loop. NAS: {NAS_DIR}, Local: {LOCAL_DIR}, Interval: {MOVE_INTERVAL}s")
